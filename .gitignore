@@ -1,0 +1,17 @@
+# results and data (archived in Zenodo, not in git)
+**/Ensemble_iter*_v3_1e6/
+**/ML_v3_results_parallel/
+**/ML_v3_results_SHAP/
+**/Figures_combined_v3/
+**/Class_transitions/results/
+**/B_Single_start_comparison/3_results/
+**/*.mat
+**/*.fig
+**/*.xlsx
+**/*.pkl
+# MATLAB / OS / Python clutter
+*.asv
+*.m~
+.DS_Store
+__pycache__/
+*.pyc

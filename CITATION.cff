@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this code or data, please cite the article and the Zenodo archive."
+title: "Hidden bistability and the geometry of kinetic parameter space in dual phosphorylation: code"
+authors:
+  - family-names: Harika
+    given-names: Guturu L
+    affiliation: "Department of Computational Biology, IIIT-Delhi"
+  - family-names: Sriram
+    given-names: K.
+    affiliation: "Department of Computational Biology, IIIT-Delhi"
+    email: sriramk@iiitd.ac.in
+version: "1.0.0"
+date-released: "2026-11-01"
+license: MIT
+repository-code: "https://github.com/HarikaGL/High_throughput_bifurcation"
+doi: "10.5281/zenodo.23609482"
+keywords:
+  - bifurcation analysis
+  - dual phosphorylation
+  - multistationarity
+  - detached branches
+  - machine learning
+  - systems biology

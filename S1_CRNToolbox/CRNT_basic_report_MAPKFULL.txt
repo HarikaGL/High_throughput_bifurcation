@@ -1,0 +1,135 @@
+                             ======================
+                             BASIC REPORT: MAPKFULL
+                             ======================
+ 
+ Reaction network:
+ ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+                                  A + K <-> AK
+                                     AK -> AP + K
+                                 AP + K <-> APK
+                                    APK -> APP + K
+                                APP + P <-> APPC
+                                   APPC -> AP + P
+                                 AP + P <-> APC
+                                    APC -> A + P
+ 
+ 
+ Remark:  None.
+ ¯¯¯¯¯¯
+ 
+ 
+                              Graphical Properties
+                              ====================
+ 
+ Number of complexes = 10
+ 
+ Number of linkage classes = 2:
+ 
+  Linkage class no. 1: {A + K, AK, AP + K, APK, APP + K}
+  Linkage class no. 2: {APP + P, APPC, AP + P, APC, A + P}
+ 
+ Number of TERMINAL strong linkage classes = 2:
+ 
+  Strong linkage class no. 1: {APP + K}
+  Strong linkage class no. 2: {A + P}
+ 
+ Number of NON-TERMINAL strong linkage classes = 4:
+ 
+  Strong linkage class no. 3: {A + K, AK}
+  Strong linkage class no. 4: {AP + K, APK}
+  Strong linkage class no. 5: {APP + P, APPC}
+  Strong linkage class no. 6: {AP + P, APC}
+ 
+ The network is neither reversible nor weakly reversible.
+ 
+ Taken with at least some kinetics, this network has the capacity to admit an
+ equilibrium at which all species are present. In particular, for mass action
+ kinetics there is an assignment of rate constants such that the resulting
+ differential equations admit an equilibrium at which all species concentrations
+ are strictly positive. (The network has positively dependent reaction vectors.)
+ 
+ The network is conservative. (There exists a positive vector orthogonal to
+ all reaction vectors.)
+ 
+ 
+ 
+                                Rank Information
+                                ================
+ 
+ Rank of entire network = 6
+ 
+ 
+ 
+                             Deficiency Information
+                             ======================
+ 
+ Deficiency of entire network = 2
+ 
+ Deficiency of linkage class no. 1 = 0
+ Deficiency of linkage class no. 2 = 0
+ 
+ 
+                                    Analysis
+                                    ========
+ 
+     This is a deficiency two network. It is an excellent candidate for application
+ of HIGHER DEFICIENCY THEORY (tailored mostly to networks with deficien-
+ cies greater than one).
+ 
+     Whether results will be obtained, will depend on whether or not the reaction 
+ network has certain additional structural attributes that help reduce the problem
+ to a study of systems of linear inequalities.
+ 
+     If a network is "good", higher deficiency theory will determine, either
+ affirmatively or negatively, whether there are positive rate constant values
+ such that the corresponding mass action differential equations admit multiple 
+ (positive) steady states. If the answer is affirmative, higher deficiency
+ theory will generate a sample set of rate constants and a pair of distinct
+ steady states that are consistent with those rate constants.
+ 
+     If a network is "bad", some additional nonlinear analysis might be required,
+ and the program might not be able to ascertain the network's capacity for
+ multiple  positive steady states. If definite conclusions can be reached they
+ they will be reported. Otherwise the program will tell you that it cannot reach
+ a conclusion.
+ 
+     Higher deficiency theory will also determine, either affirmatively or
+ negatively, whether there can exist a set of rate constants such that the
+ corresponding mass action differential equations admit a positive steady
+ state having a zero eigenvalue (corresponding to an eigenvector in the
+ stoichiometric subspace).  When the answer is affirmative, the theory will
+ produce such a set of rate constants, a positive steady state, and an
+ eigenvector (in the stoichiometric subspace) corresponding to an eigenvalue
+ of zero. Results of this kind are contained after running the Zero Eigenvalue
+ Report.
+ 
+ 
+     For information about still other reports (including those that provide information when the kinetics is not mass action) see the CRNToolbox Guide pdf file that accompanied this program.
+ 
+ 
+          Introductory References for Chemical Reaction Network Theory
+          ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ 
+    The following provides a general introduction to parts of Chemical Reaction
+ Network Theory that are centered on the network's deficiency:
+ 
+ Feinberg, M., Chemical reaction network structure and the stability of complex
+ isothermal reactors. I. The deficiency zero and deficiency one theorems,
+ Chem. Eng. Science, 42, 2229-2268 (1987).
+ 
+     The following is a typewritten set of lectures on reaction networks that are
+ aimed at mathematicians:
+ 
+ Feinberg, M. Lectures on Chemical Reaction Networks, Written versions of
+ lectures given at the Mathematics Research Center, University of Wisconsin,
+ Autumn, 1979, available at:
+ 
+ http://www.crnt.osu.edu/LecturesOnReactionNetworks
+ 
+      An introduction to more recent work can be found here:
+ 
+ Craciun, G., Y. Z. Tang, and M. Feinberg. 2006. Understanding bistability in
+ complex enzyme-driven reaction networks. Proc. Natl Acad Sci USA 103:8697
+ -8702 (2006).
+ 
+                                  ***********
