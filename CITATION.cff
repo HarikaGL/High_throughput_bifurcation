@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this code or data, please cite the article and the Zenodo archive."
-title: "Hidden bistability and the geometry of kinetic parameter space in dual phosphorylation: code"
+title: "Exact ensemble bifurcation analysis reveals hidden bistability and makes signalling dynamics predictable from kinetic parameters: code"
 authors:
   - family-names: Harika
     given-names: Guturu L

@@ -8,7 +8,7 @@ Harika G. L., K. Sriram - Department of Computational Biology, IIIT-Delhi
 This folder contains the MATLAB code and results used to compare labels
 obtained by single-start continuation (one ode15s start at ATOT = 0.1 followed
 by one MATCONT continuation) with the exact steady-state structure (inverse
-method), and the single-start pipeline itself for reference.
+method).
 
 The single-start labels used in the paper were computed on the SAME 40,000
 parameter sets as the exact labels, with SingleStart_v3.m (folder A; outputs in
@@ -16,9 +16,6 @@ A/Ensemble_iter<i>_v3_1e6/SingleStart/: ML_Ready_Dataset_singlestart.csv,
 SingleStart_vs_Exact.csv, SingleStart_summary.txt with core-hours). The run
 completed for 39,638 sets (362 ended on negative concentrations). With
 SINGLE_START = 'v3' (default) make_comparison_figures.m reads these files.
-The earlier single-start ensemble (39,646 unseeded sets,
-3_results/d_single_start_ensemble_inputs) is kept only for reference; it is
-read when SINGLE_START = 'original'.
 The labelling and machine learning of the manuscript are in folder A.
 
 -------------------------------------------------------------------------------
@@ -26,7 +23,7 @@ The labelling and machine learning of the manuscript are in folder A.
 -------------------------------------------------------------------------------
 2_codes/
   a_comparison_figures/make_comparison_figures.m
-        Figs 7-9 and 15B and Supplementary Figs 3-6 of the paper (output files
+        Figs 8, 9 and 15B and Supplementary Figs 3-6 of the paper (output files
         EX_fig*, BP_fig*, SS_fig*, ML_fig4_analytic_conditions), and every number quoted
         in their legends (written to figure_numbers.txt). Contains an independent
         MATLAB implementation of the exact analysis (u = K/P parametrisation,
@@ -35,9 +32,6 @@ The labelling and machine learning of the manuscript are in folder A.
         exact labelling on the single-start ensemble (8-class scheme, W = 1e6)
   b_data_generation_v2/Compare_SingleStart_vs_Exact.m
         single-start and exact labelling of the same LHS sets
-  c_single_start_pipeline/
-        single-start pipeline: MAPKfull.m (MATCONT model file), Ensemble_LHS.m,
-        Ensemble_bif_regenerate.m, ML.m
   d_ML_label_comparison/ML_RC_based2.m
         ML analyses (baseline, confound audit, feature-set ablation, per
         iteration, Class 7 vs 8, pooled confusion) with the exact 8-class and
@@ -47,9 +41,6 @@ The labelling and machine learning of the manuscript are in folder A.
                                figure_numbers.txt, cache/)
   b_data_generation_v2/        output of Ensemble_LHS_v2.m
   c_ML_label_comparison/       output of ML_RC_based2.m
-  d_single_start_ensemble_inputs/  ML_Ready_Dataset.csv of the single-start
-                               ensemble (39,646 sets; reference only, used
-                               when SINGLE_START = 'original')
 
 -------------------------------------------------------------------------------
 2. RUNNING
@@ -59,7 +50,7 @@ set ROOT at the top of the script (data folders: Ensemble_iterN_v2_1e6,
 data_gen/MatCont7p6/Ensemble_v3/Ensemble_iterN_v3_1e6/SingleStart/ and the
 output of the ML scripts).
 Base MATLAB R2020a or newer; 20-40 min the first time, ~1 min with the cache.
-Ensemble_LHS_v2.m and Ensemble_LHS.m need MATCONT 7p6 (run from inside the
+Ensemble_LHS_v2.m needs MATCONT 7p6 (run from inside the
 MATCONT folder); parfor needs the Parallel Computing Toolbox.
 The ML scripts call LightGBM, RandomForest and NaiveBayes through MATLAB's
 Python interface (Python with lightgbm and scikit-learn).

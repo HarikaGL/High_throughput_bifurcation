@@ -5,7 +5,7 @@
 %   TR_03_two_class_sweeps   two-class switches (sweeps of one quantity through a boundary)
 %   TR_04_figures            Supplementary figures (transition map, two-class switches,
 %                            symmetry breaking) and the LaTeX rows of the transition table
-%   TR_05_window_sets        Supplementary Figs 23, 24 and Table 19: sets whose detached fold
+%   TR_05_window_sets        Supplementary Figs 27, 28 and Table 21: sets whose detached fold
 %                            lies above ATOT = 1e6 (open circles of Fig 11) and the classifier
 %                            errors they cause (reads Misclassified_test.csv)
 % Place this folder (Class_transitions) inside A_Ensemble_labelling_and_ML: it uses the

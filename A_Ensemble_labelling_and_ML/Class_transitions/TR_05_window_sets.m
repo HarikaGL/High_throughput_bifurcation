@@ -1,12 +1,12 @@
 % ======================= TR_05_window_sets.m ===========================================
-% Detached branches beyond the labelling window (Supplementary Note 18).
-% PART 1 (Supplementary Fig 23; the open circles and stars of Fig 11): sets in the
+% Detached branches beyond the labelling window (Supplementary Note 19).
+% PART 1 (Supplementary Fig 27; the open circles and stars of Fig 11): sets in the
 %   detached-branch quadrant (x < 0, y > 0, criterion (10)) labelled 1, 3, 9 or 10. Their
 %   detached branch exists, but its fold lies above ATOT = 1e6, so the label counts only
 %   the main branch. For each class: the (x, y) panel with the open circles and two starred
 %   examples (a: detached fold nearest 10^7, the set of Fig 11B; b: deepest inside the
 %   quadrant), and the exact diagrams of a and b extended beyond 1e6.
-% PART 2 (Supplementary Fig 24, Supplementary Table 19): misclassified held-out test sets
+% PART 2 (Supplementary Fig 28, Supplementary Table 21): misclassified held-out test sets
 %   of the pooled LightGBM model (ML_v3_results_parallel/labels_Exact_Class_v3/
 %   misclassified/Misclassified_test.csv) that are such sets: the classifier recognises
 %   the detached branch from the signs of x and y, the label does not count it.

@@ -9,7 +9,6 @@ SET-UP (Windows or Linux)
       init.m, Continuer\, Equilibrium\, ...       (MATCONT 7p6, unchanged)
       A_Ensemble_labelling_and_ML\
         Ensemble_LHS_v3.m             main script: run this
-        Ensemble_bif_regenerate_v3.m  redraws the class figures from saved results
         Ensemble_class_wheel_v3.m     class wheel: all 4 iterations in one circle, wedge
                                       = share of the ensemble, discs = real diagrams
         Ensemble_class_table_v3.m     table: parameter sets | labels | one diagram per
@@ -100,7 +99,7 @@ support\ FILES
   exact_labels.m         folds/BPs from the exact structure + normal forms
   classify_branches.m    ten-class rule (also returns the v2 and 7-class labels)
   class_info_v3.m        class names, plot labels, colours
-  classify_v3.m          ten-class label of a v3 OR v2 result struct
+  load_ensemble_v3.m     reads the 40,000 labelled sets (feature and Fig 7 scripts)
   normal_forms.m         normal-form coefficients (LP and BP)
   old_analyze_sample.m   original single-start MATCONT procedure (for the check)
   matcont_check.m        the two MATCONT check figures

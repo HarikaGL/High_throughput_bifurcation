@@ -1,7 +1,7 @@
 ===============================================================================
 SUPPLEMENTARY CODE AND DATA  (Supplementary Files 2-6)
-Hidden bistability and the geometry of kinetic parameter space in dual
-phosphorylation
+Exact ensemble bifurcation analysis reveals hidden bistability and makes
+signalling dynamics predictable from kinetic parameters
 Guturu L Harika, K. Sriram - Department of Computational Biology, IIIT-Delhi
 Code:    https://github.com/HarikaGL/High_throughput_bifurcation
 Archive: https://doi.org/10.5281/zenodo.23609482
@@ -9,7 +9,7 @@ Archive: https://doi.org/10.5281/zenodo.23609482
 
 This package contains all code, data and results needed to reproduce every
 figure, table and number of the manuscript and its Supplementary Information.
-Supplementary Table 15 lists the code behind each figure and table; the same
+Supplementary Table 17 lists the code behind each figure and table; the same
 information is given at the end of every figure legend.
 
 Units: concentrations (K_TOT, P_TOT, A_TOT and all species) in nM; binding
@@ -35,13 +35,15 @@ Inside A_Ensemble_labelling_and_ML/:
   Ensemble_LHS_v3.m                 exact labelling of one sampling iteration
   Manuscript_numbers_v3.m           numbers of Tables 1-3 and 6 and of the criteria
   Ensemble_LHS_tiles_v3.m, Ensemble_class_table_v3.m, Ensemble_class_wheel_v3.m,
-  Ensemble_class_wheel_single_v3.m, Ensemble_iteration_panels_v3.m,
-  Fig_normal_forms_v3.m, Ensemble_bif_regenerate_v3.m       figure scripts
+  Ensemble_iteration_panels_v3.m,
+  Fig_inverse_method_v3.m, Fig_criterion_v3.m, Fig_normal_forms_v3.m   figure scripts
   SingleStart_v3.m                  single-start MATCONT labels of the same sets
   ML_v3_10class_parallel.m          machine learning (all models, all analyses)
+  ML_v3_feature_engineering.m       feature engineering and JSD selection (Note 9)
+  ML_v3_inference_time.m            time per set of the trained classifier
   ML_v3_SHAP_per_class.m            per-class TreeSHAP contributions
-  ML_v3_misclassified_diagrams.m, ML_v3_misclassified_figure17.m   Fig 17
-  Class_transitions/                Fig 11 and the class-transition analysis
+  ML_v3_misclassified_diagrams.m, ML_v3_misclassified_figure17.m   Supplementary Fig 26
+  Class_transitions/                Fig 7 and the class-transition analysis
                                     (TR_00_run_all.m runs TR_01 ... TR_05;
                                     helper functions in tr_lib/)
   support/                          exact labeller (ss_structure.m, exact_labels.m,
@@ -110,14 +112,14 @@ Inside A_Ensemble_labelling_and_ML/:
           Ensemble_LHS_tiles_v3.m          Fig 1 panel [II]
           Ensemble_class_table_v3.m        Fig 1 panel [III]
           Ensemble_class_wheel_v3.m        Fig 1 panel [IV]
-          Ensemble_iteration_panels_v3.m   Figs 2-5
-          Fig_normal_forms_v3.m            Fig 10
-          Ensemble_class_wheel_single_v3.m class wheel of Fig 12
-          Ensemble_bif_regenerate_v3.m     per-iteration class figures
-          Manuscript_numbers_v3.m          Tables 1, 2, 3, 6 and the criteria
+          Ensemble_iteration_panels_v3.m   Fig 2
+          Fig_inverse_method_v3.m          Fig 3 (inverse method; every number of the figure
+                                           -> Fig3_inverse_method_numbers.txt)
+          Fig_criterion_v3.m               Fig 4 (criterion (10); counts of panel C)
+          Fig_normal_forms_v3.m            Supplementary Fig 24
+          Manuscript_numbers_v3.m          Tables 1, 2; Supplementary Tables 22, 25 and the
+                                           criteria
           Output: Figures_combined_v3/, Manuscript_numbers_v3.txt.
-          Fig 1 and Fig 12 were assembled from these panels (Fig 1 panel [I]
-          drawn by hand).
 
   Step 3  ML_v3_10class_parallel.m        machine learning
           Reads Ensemble_iter<i>_v3_1e6/Excel_Files/ML_Ready_Dataset_v3_iter<i>.csv;
@@ -128,25 +130,31 @@ Inside A_Ensemble_labelling_and_ML/:
           boosting, naive Bayes, most-frequent baseline. cfg.nWorkers = 64 was
           used; cfg.nWorkers = 0 runs serially. Feature colours and the colour
           scale of the confusion matrices: support/feature_colors.m, cm_graded.m.
-          Output: ML_v3_results_parallel/ -> Figs 13, 14, 15A, 16;
-          Supplementary Figs 7-16; Tables 7-9; Supplementary Tables 5-12.
+          Output: ML_v3_results_parallel/ -> Figs 8, 9, 10A; Tables 3, 4;
+          Supplementary Figs 10-16, 25; Supplementary Tables 5, 8-14, 23, 26, 27.
+          ML_v3_feature_engineering.m (base MATLAB, about 1 min): feature set A, JSD
+          and broken-stick selection pooled and within each iteration ->
+          ML_v3_results_parallel/labels_Exact_Class_v3/feature_engineering/:
+          Supplementary Figs 6-9, Supplementary Tables 6, 7, Table 3 and
+          block 3 of Fig 8. ML_v3_inference_time.m: time per set of the trained LightGBM
+          classifier (Methods) -> ML_v3_results_parallel/inference_time.txt.
 
-  Step 4  ML_v3_misclassified_diagrams.m, ML_v3_misclassified_figure17.m   Fig 17
+  Step 4  ML_v3_misclassified_diagrams.m, ML_v3_misclassified_figure17.m   Supplementary Fig 26
           Refit the pooled LightGBM model (same data, split and seed), list every
           misclassified test set (misclassified/Misclassified_test.csv) and draw
           exact diagrams of representative sets.
 
-  Step 5  ML_v3_SHAP_per_class.m          Table 10; Supplementary Figs 18, 19;
-          Supplementary Table 16 (Note 16). Same data, splits and LightGBM
+  Step 5  ML_v3_SHAP_per_class.m          Table 5; Supplementary Figs 17, 18;
+          Supplementary Table 18. Same data, splits and LightGBM
           settings as step 3; TreeSHAP (pred_contrib) on held-out test rows.
           About 2-5 min. Output: ML_v3_results_SHAP/.
 
   Step 6  Class_transitions/TR_00_run_all.m
-          TR_01_ready_reckoner.m    Fig 11 (ready reckoner, open circles, panel B)
+          TR_01_ready_reckoner.m    Fig 7 (ready reckoner, open circles, panel B)
           TR_02_scan.m              single-parameter scan of 1,560 sets
           TR_03_two_class_sweeps.m  two-class sweeps through each boundary
-          TR_04_figures.m           Supplementary Figs 20-22, Tables 17, 18
-          TR_05_window_sets.m       Supplementary Figs 23, 24, Table 19 (sets
+          TR_04_figures.m           Supplementary Figs 19-21, Tables 19, 20
+          TR_05_window_sets.m       Supplementary Figs 22, 23, Table 21 (sets
                                     whose detached fold lies above 1e6; reads
                                     the misclassified test sets of step 4)
           Output: Class_transitions/results/, Figures_combined_v3/.
@@ -154,14 +162,13 @@ Inside A_Ensemble_labelling_and_ML/:
 
 
 3.3  Folder B (Supplementary File 4)
-  2_codes/a_comparison_figures/make_comparison_figures.m draws Figs 7-9 and 15B
-  and Supplementary Figs 3-6, contains an independent implementation of the exact
+  2_codes/a_comparison_figures/make_comparison_figures.m draws Figs 5, 6 and 10B
+  and Supplementary Figs 3-5, contains an independent implementation of the exact
   analysis and runs the verification tests of the Methods; every number quoted
   in their legends is written to 3_results/a_comparison_figures/figure_numbers.txt.
   Set ROOT at the top of the script to the folder that contains A and B.
-  2_codes/b_data_generation_v2/, c_single_start_pipeline/ and
-  d_ML_label_comparison/ hold the earlier single-start pipeline and its
-  comparison, kept for reference. Details: B_Single_start_comparison/README_B.txt.
+  2_codes/b_data_generation_v2/ and d_ML_label_comparison/ produce the v2
+  labels and the ML results that make_comparison_figures.m reads. Details: B_Single_start_comparison/README_B.txt.
 
 3.4  Folder C (Supplementary File 6)
   Analytical_Derivations_StepByStep_final.nb   derivations of Eqs (1)-(14) and of

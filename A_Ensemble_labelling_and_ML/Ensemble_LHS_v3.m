@@ -3,11 +3,10 @@
 % ensemble, TEN classes, with normal-form coefficients and a visual MATCONT check.
 %
 % HOW TO RUN
-%   Put the whole folder Ensemble_v3 inside the MatCont7p6 folder:
+%   Put the whole folder A_Ensemble_labelling_and_ML inside the MatCont7p6 folder:
 %       MatCont7p6/
-%         Ensemble_v3/
+%         A_Ensemble_labelling_and_ML/
 %           Ensemble_LHS_v3.m              <- this script (run it)
-%           Ensemble_bif_regenerate_v3.m   <- redraws the class figures from the results
 %           README.txt
 %           support/                       <- all helper functions (added automatically)
 %   Open this script, set ITERATION (1..4) below and press Run. The paths to the helper

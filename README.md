@@ -1,4 +1,4 @@
-# Hidden bistability and the geometry of kinetic parameter space in dual phosphorylation
+# Exact ensemble bifurcation analysis reveals hidden bistability and makes signalling dynamics predictable from kinetic parameters
 
 Code for the article by **Guturu L Harika and K. Sriram** (Department of Computational Biology, IIIT-Delhi).
 
@@ -16,12 +16,12 @@ The code maps the kinetic parameter space of the ordered, distributive dual phos
 
 | Folder | Content | Supplementary File |
 |---|---|---|
-| `A_Ensemble_labelling_and_ML/` | exact ten-class labelling (`Ensemble_LHS_v3.m`), figure scripts, machine learning (`ML_v3_10class_parallel.m`, `ML_v3_SHAP_per_class.m`, Fig 17 scripts), class transitions (`Class_transitions/`), helper functions (`support/`) | 2, 3 |
+| `A_Ensemble_labelling_and_ML/` | exact ten-class labelling (`Ensemble_LHS_v3.m`), figure scripts (`Fig_inverse_method_v3.m`, `Fig_criterion_v3.m`, ...), machine learning (`ML_v3_10class_parallel.m`, `ML_v3_feature_engineering.m`, `ML_v3_inference_time.m`, `ML_v3_SHAP_per_class.m`, misclassification scripts), class transitions (`Class_transitions/`), helper functions (`support/`) | 2, 3 |
 | `B_Single_start_comparison/` | independent re-implementation of the exact analysis, verification tests and comparison with single-start continuation (`make_comparison_figures.m`) | 4 |
 | `C_Mathematica_derivations/` | Mathematica 15 notebooks deriving Eqs (1)–(14) and checking them on ensemble sets | 6 |
 | `S1_CRNToolbox/` | Chemical Reaction Network Toolbox input (`MAPKFULL.NET`) and reports | 1 |
 
-`README.txt` (Supplementary File 5) gives the full run order, inputs, outputs, settings and run times. Supplementary Table 15 of the article lists the script behind every figure and table.
+`README.txt` (Supplementary File 5) gives the full run order, inputs, outputs, settings and run times. Supplementary Table 17 of the article lists the script behind every figure and table.
 
 ## Requirements
 
@@ -30,7 +30,7 @@ The code maps the kinetic parameter space of the ordered, distributive dual phos
   - Parallel Computing Toolbox (optional);
   - Signal Processing Toolbox (only for the single-start MATCONT check).
 - [MATCONT 7p6](https://sourceforge.net/projects/matcont/), needed only for the MATCONT validation and the single-start labels.
-- Python 3 via MATLAB's `pyenv`, with `numpy`, `lightgbm`, `scikit-learn`, `xgboost` and `catboost`. Needed for the machine-learning scripts only; the models are called from MATLAB, and the repository has no stand-alone Python scripts.
+- Python 3 via MATLAB's `pyenv`, with `numpy`, `lightgbm`, `scikit-learn`, `xgboost` and `catboost`. Needed for the machine-learning scripts only; the models are called from MATLAB, and the repository contains MATLAB code only (no stand-alone Python scripts).
 - Wolfram Mathematica 15, needed for folder C only.
 - The class-transition scripts need base MATLAB only and also run in GNU Octave 6 or newer.
 
@@ -44,12 +44,19 @@ Ensemble_LHS_v3                   % repeat for ITERATION = 2, 3, 4
 
 % 2. machine learning (Python lightgbm etc. through pyenv)
 ML_v3_10class_parallel            % cfg.nWorkers = 0 runs serially
+ML_v3_feature_engineering         % feature engineering and JSD selection (base MATLAB)
+ML_v3_inference_time              % time per set of the trained classifier
 ML_v3_misclassified_diagrams; ML_v3_misclassified_figure17
 ML_v3_SHAP_per_class
 
-% 3. ready reckoner (Fig 11) and class transitions (base MATLAB or Octave)
+% 3. ready reckoner (Fig 7) and class transitions (base MATLAB or Octave)
 cd Class_transitions
 TR_00_run_all
+
+% 4. figures of the main text from the labelled ensemble (base MATLAB or Octave)
+cd ..
+Fig_inverse_method_v3             % Fig 3, inverse method for one parameter set
+Fig_criterion_v3                  % Fig 4, criterion (10)
 ```
 
 The exact labeller for a single parameter set is:
