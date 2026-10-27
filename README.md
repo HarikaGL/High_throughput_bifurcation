@@ -18,7 +18,7 @@ The code maps the kinetic parameter space of the ordered, distributive dual phos
 |---|---|---|
 | `A_Ensemble_labelling_and_ML/` | exact ten-class labelling (`Ensemble_LHS_v3.m`), figure scripts (`Fig_inverse_method_v3.m`, `Fig_criterion_v3.m`, ...), machine learning (`ML_v3_10class_parallel.m`, `ML_v3_feature_engineering.m`, `ML_v3_inference_time.m`, `ML_v3_SHAP_per_class.m`, misclassification scripts), class transitions (`Class_transitions/`), helper functions (`support/`) | 2, 3 |
 | `B_Single_start_comparison/` | independent re-implementation of the exact analysis, verification tests and comparison with single-start continuation (`make_comparison_figures.m`) | 4 |
-| `C_Mathematica_derivations/` | Mathematica 15 notebooks deriving Eqs (1)–(14) and checking them on ensemble sets | 6 |
+| `C_Mathematica_derivations/` | Mathematica 15 notebooks deriving Eqs (1)–(14) and checking them on ensemble sets, with a figure cell at the end of every section; the evaluated notebooks with all figures as `_final.pdf` | 6 |
 | `S1_CRNToolbox/` | Chemical Reaction Network Toolbox input (`MAPKFULL.NET`) and reports | 1 |
 
 `README.txt` (Supplementary File 5) gives the full run order, inputs, outputs, settings and run times. Supplementary Table 17 of the article lists the script behind every figure and table.

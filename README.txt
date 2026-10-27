@@ -175,6 +175,8 @@ Inside A_Ensemble_labelling_and_ML/:
                                                the normal-form coefficients
   Excel_Parameter_Examples_Condition_Checks_final.nb   the conditions evaluated
                                                on one ensemble set of every class
+  Each section ends with a figure cell that plots its result; the evaluated
+  notebooks, with all outputs and figures, are the matching _final.pdf files.
   Open in Mathematica 15 and evaluate all cells. Details: README.txt inside.
 
 -------------------------------------------------------------------------------

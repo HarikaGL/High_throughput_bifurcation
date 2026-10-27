@@ -105,7 +105,205 @@ RowBox[{"{",RowBox[{RowBox[{"{",RowBox[{RowBox[{"-","1"}],",","1",",","0",",","0
 {"{",RowBox[{"0",",","0",",","0",",","0",",","0",",","0",",","1",",",RowBox[{"-","1"}],",",RowBox[
 {"-","1"}],",","0",",","0",",","0"}],"}"}],",",RowBox[{"{",RowBox[{"0",",","0",",","0",",","0",",","0",",","0",",","0",",","0",",","0",",","1",",",RowBox[
 {"-","1"}],",",RowBox[{"-","1"}]}],"}"}]}],"}"}],StandardForm],"Output",CellLabel -> "Out[8]= ",
-ExpressionUUID -> "3ac0a48d-f4d9-46be-ac01-37251ed01e03"]},Open],ExpressionUUID -> "d64b874d-3c45-456a-8209-32315bdb225b"],Cell[
+ExpressionUUID -> "3ac0a48d-f4d9-46be-ac01-37251ed01e03"]},Open],ExpressionUUID -> "d64b874d-3c45-456a-8209-32315bdb225b"],
+Cell["Added for the figures: set-up for the plot cells of this notebook. Evaluate it before any plot cell below. All names begin with \"fig\", so the derivations above and below are not affected.", "Text", CellTags -> "AddedPlotCell"],
+Cell["(* Shared set-up for the plot cells: evaluate this cell once, before any plot cell.
+   All names start with \"fig\" so that they do not clash with the symbols of the
+   derivation notebooks (k1, A, K, P, u, x, alpha, ... are left untouched).
+   Every figure is shown and also exported as PDF to the sub-folder \"plots\"
+   next to this notebook (or of the working directory if the notebook is unsaved). *)
+figDir = Quiet[Check[FileNameJoin[{NotebookDirectory[], \"plots\"}], $Failed]];
+If[! StringQ[figDir], figDir = FileNameJoin[{Directory[], \"plots\"}]];
+If[! DirectoryQ[figDir], CreateDirectory[figDir]];
+figSave[name_String, g_] := (Export[FileNameJoin[{figDir, name <> \".pdf\"}], g]; g);
+(* figShow prints every panel as its own output (at most 460 points wide, so that the notebook
+   prints to PDF without scroll panes cutting the figures) and exports the composite figure. *)
+figShow[name_String, panels_List, composite_] := (
+   Scan[Print, panels];
+   Export[FileNameJoin[{figDir, name <> \".pdf\"}], composite];
+   Print[Style[\"saved: \" <> FileNameJoin[{figDir, name <> \".pdf\"}], Gray, 9]];);
+(* number formatting without padding messages: n significant digits, integers when large *)
+figNum[x_?NumericQ, n_Integer: 4] := StringReplace[
+   If[Abs[x] >= 10^n, ToString[Round[x]], ToString[NumberForm[N[x], n]]], RegularExpression[\"\\\\.$\"] -> \"\"];
+figBlue = RGBColor[0.12, 0.38, 0.70]; figRed = RGBColor[0.84, 0.24, 0.24];
+
+(* Parameter sets (concentrations in nM; k1, k3, k5, k7 in 1/(nM s); others in 1/s).
+   figSet3: Iteration 1, row 96 (Class 5), the set of main-text Fig 3.
+   figSet6: Iteration 3, row 5990 (Class 6), fully kinase-phosphatase symmetric. *)
+figSet3 = <|\"KTOT\" -> 132.77894269306515, \"PTOT\" -> 16.907466299146936, \"k1\" -> 0.0044702559966119946, \"k11\" -> 0.29969965184730146, \"k2\" -> 0.005182024042454119, \"k3\" -> 0.0032253073948188497, \"k33\" -> 0.013085332598310186, \"k4\" -> 0.5054742845571937, \"k5\" -> 1.033160349871648, \"k55\" -> 0.003440804860184932, \"k6\" -> 0.0013736060258734604, \"k7\" -> 1.2751040197990826, \"k77\" -> 0.005733101589961398, \"k8\" -> 0.7733017996964503|>;
+figSet6 = <|\"KTOT\" -> 25.68678690797921, \"PTOT\" -> 25.68678690797921, \"k1\" -> 0.05546638186098454, \"k11\" -> 3.709922237775117, \"k2\" -> 0.01505315498170104, \"k3\" -> 2.969551126146651, \"k33\" -> 6.500575890125845, \"k4\" -> 3.951959656644954, \"k5\" -> 0.05546638186098454, \"k55\" -> 3.709922237775117, \"k6\" -> 0.01505315498170104, \"k7\" -> 2.969551126146651, \"k77\" -> 6.500575890125845, \"k8\" -> 3.951959656644954|>;
+
+(* Constants of the inverse parametrisation, Eqs (7)-(9). *)
+figConst[pr_Association] := Module[{m1, m3, m5, m7, a1, a2, r, al, be},
+  m1 = (pr[\"k11\"] + pr[\"k2\"])/pr[\"k1\"]; m3 = (pr[\"k33\"] + pr[\"k4\"])/pr[\"k3\"];
+  m5 = (pr[\"k55\"] + pr[\"k6\"])/pr[\"k5\"]; m7 = (pr[\"k77\"] + pr[\"k8\"])/pr[\"k7\"];
+  a1 = pr[\"k2\"] m7/(pr[\"k8\"] m1); a2 = pr[\"k4\"] m5/(pr[\"k6\"] m3);
+  r = pr[\"KTOT\"]/pr[\"PTOT\"];
+  al = (a1/m3) (r pr[\"k4\"]/pr[\"k6\"] - 1); be = (1/m1) (r pr[\"k2\"]/pr[\"k8\"] - 1);
+  <|\"M1\" -> m1, \"M3\" -> m3, \"M5\" -> m5, \"M7\" -> m7, \"a1\" -> a1, \"a2\" -> a2, \"r\" -> r,
+    \"alpha\" -> al, \"beta\" -> be, \"ustar\" -> If[al != 0, -be/al, Infinity],
+    \"degenerate\" -> (Abs[al r + be] <= 10^-9 (Abs[al] r + Abs[be]))|>];
+
+(* Free substrate A(u), Eq. (8), and the full steady state at (u, A), Eq. (9). *)
+figA[c_Association, u_] := (u - c[\"r\"])/(u (c[\"alpha\"] u + c[\"beta\"]));
+figState[pr_Association, c_Association, u_, a_] :=
+ Module[{kk, pp, x1, x2, x3, x4, x5, x6},
+  kk = pr[\"KTOT\"]/(1 + a/c[\"M1\"] + c[\"a1\"] u a/c[\"M3\"]); pp = kk/u;
+  x1 = c[\"a1\"] u a; x2 = c[\"a1\"] c[\"a2\"] u^2 a;
+  x3 = a kk/c[\"M1\"]; x4 = x1 kk/c[\"M3\"]; x5 = x2 pp/c[\"M5\"]; x6 = x1 pp/c[\"M7\"];
+  <|\"u\" -> u, \"A\" -> a, \"K\" -> kk, \"P\" -> pp, \"x\" -> {x1, x2, x3, x4, x5, x6},
+    \"ATOT\" -> a + x1 + x2 + x3 + x4 + x5 + x6|>];
+
+(* Reduced six-state model, Eqs (1)-(2); state order {AP, APP, AK, APK, APPC, APC}. *)
+figRHS[pr_Association, at_, xs_List] := Module[{v, fA, fK, fP},
+  fA = at - Total[xs]; fK = pr[\"KTOT\"] - xs[[3]] - xs[[4]]; fP = pr[\"PTOT\"] - xs[[5]] - xs[[6]];
+  v = {pr[\"k1\"] fA fK - pr[\"k11\"] xs[[3]], pr[\"k2\"] xs[[3]],
+       pr[\"k3\"] xs[[1]] fK - pr[\"k33\"] xs[[4]], pr[\"k4\"] xs[[4]],
+       pr[\"k5\"] xs[[2]] fP - pr[\"k55\"] xs[[5]], pr[\"k6\"] xs[[5]],
+       pr[\"k7\"] xs[[1]] fP - pr[\"k77\"] xs[[6]], pr[\"k8\"] xs[[6]]};
+  {v[[2]] - v[[3]] + v[[6]] - v[[7]], v[[4]] - v[[5]], v[[1]] - v[[2]],
+   v[[3]] - v[[4]], v[[5]] - v[[6]], v[[7]] - v[[8]]}];
+
+(* Analytic Jacobian in the compact form of the notebook (support/jac6.m). *)
+figJac[pr_Association, at_, xs_List] := Module[{x1, x2, x3, x4, x5, x6, s, cK, cP},
+  {x1, x2, x3, x4, x5, x6} = xs; s = Total[xs] - at;
+  cK = x3 + x4 - pr[\"KTOT\"]; cP = x5 + x6 - pr[\"PTOT\"];
+  With[{k1 = pr[\"k1\"], k11 = pr[\"k11\"], k2 = pr[\"k2\"], k3 = pr[\"k3\"], k33 = pr[\"k33\"],
+        k4 = pr[\"k4\"], k5 = pr[\"k5\"], k55 = pr[\"k55\"], k6 = pr[\"k6\"], k7 = pr[\"k7\"],
+        k77 = pr[\"k77\"], k8 = pr[\"k8\"]},
+   {{k3 cK + k7 cP, 0, k2 + x1 k3, k33 + x1 k3, k6 + x1 k7, k77 + x1 k7},
+    {0, k5 cP, 0, k4, k55 + x2 k5, x2 k5},
+    {k1 cK, k1 cK, k1 s - k11 - k2 + k1 cK, k1 s + k1 cK, k1 cK, k1 cK},
+    {-k3 cK, 0, -x1 k3, -k4 - k33 - x1 k3, 0, 0},
+    {0, -k5 cP, 0, 0, -k6 - k55 - x2 k5, -x2 k5},
+    {-k7 cP, 0, 0, 0, -x1 k7, -k8 - k77 - x1 k7}}]];
+figStableQ[pr_Association, at_, xs_List] := Max[Re[Eigenvalues[N[figJac[pr, at, xs]]]]] < 0;
+
+(* All positive steady states as branches of the parametrisation. *)
+figPosQ[s_Association] := Min[s[\"x\"]] > 0 && s[\"K\"] > 0 && s[\"P\"] > 0;
+figUGrid[c_Association] := Module[{crit = Select[{c[\"r\"], c[\"ustar\"]}, 0 < # < Infinity &]},
+  Union[10.^Range[-14., 10., 0.004],
+   Flatten[Table[cc {1 - 10.^-k, 1 + 10.^-k}, {cc, crit}, {k, 1, 12}]]]];
+figBranches[pr_Association] := Module[{c = figConst[pr], r, crit, us, pts, br},
+  r = c[\"r\"];
+  If[TrueQ[c[\"degenerate\"]],
+   (* symmetric case: the line u = r (any A) and the curve A = 1/(alpha u) *)
+   br = {figState[pr, c, r, #] & /@ (10.^Range[-8., 8., 0.004])};
+   If[c[\"alpha\"] > 0,
+    AppendTo[br, figState[pr, c, #, 1/(c[\"alpha\"] #)] & /@ (10.^Range[-6., 6., 0.002])]],
+   (* general case: the intervals of {u > 0 : A(u) > 0} between r and u* *)
+   crit = Select[{r, c[\"ustar\"]}, 0 < # < Infinity &];
+   us = Select[figUGrid[c], figA[c, #] > 0 &];
+   pts = figState[pr, c, #, figA[c, #]] & /@ us;
+   br = GatherBy[pts, Function[s, Count[crit, cc_ /; cc < s[\"u\"]]]]];
+  br = Function[b, Select[b, figPosQ]] /@ br;
+  Select[br, Length[#] > 1 &]];
+
+(* Folds: extrema of ATOT along a branch; branch point of the symmetric case. *)
+figFoldsOf[branch_List] := Module[{g = #[\"ATOT\"] & /@ branch, d},
+  d = Differences[Sign[Differences[g]]];
+  branch[[1 + Flatten[Position[d, z_ /; z != 0, {1}]]]]];
+figBP[pr_Association] := With[{c = figConst[pr]},
+  If[TrueQ[c[\"degenerate\"]] && c[\"alpha\"] > 0,
+   figState[pr, c, c[\"r\"], 1/c[\"alpha\"]], Missing[\"NoBranchPoint\"]]];
+figSingular[pr_Association, br_List] :=
+  Join[Flatten[figFoldsOf /@ br, 1], If[MissingQ[figBP[pr]], {}, {figBP[pr]}]];
+
+(* Exact bifurcation diagram APP against ATOT: blue stable, red unstable, black dots
+   folds and branch points. Options (PlotRange, PlotLabel, ...) are passed on. *)
+figDiagram[pr_Association, opts___] := Module[{br = figBranches[pr], lab, st, un, sing, data},
+  lab = Flatten[Function[b, {#[\"ATOT\"], #[\"x\"][[2]], figStableQ[pr, #[\"ATOT\"], #[\"x\"]]} & /@ b] /@ br, 1];
+  st = Cases[lab, {a_, b_, True} :> {a, b}]; un = Cases[lab, {a_, b_, False} :> {a, b}];
+  sing = {#[\"ATOT\"], #[\"x\"][[2]]} & /@ figSingular[pr, br];
+  data = Select[{{st, Directive[figBlue, PointSize[0.006]]}, {un, Directive[figRed, PointSize[0.006]]},
+      {sing, Directive[Black, PointSize[0.02]]}}, Length[First[#]] > 0 &];
+  ListLogLogPlot[data[[All, 1]], opts, PlotStyle -> data[[All, 2]],
+   PlotRange -> {{10^-1, 10^6}, All}, Frame -> True, FrameLabel -> {\"A_TOT (nM)\", \"APP (nM)\"},
+   ImageSize -> 440]];
+
+(* Steady states at a given ATOT (roots of ATOT(u) = at on every branch). *)
+figStatesAt[pr_Association, at_] := Module[{c = figConst[pr], br, out = {}, g, lu, s},
+  br = figBranches[pr];
+  Do[g = #[\"ATOT\"] - at & /@ b;
+   Do[If[g[[j]] g[[j + 1]] <= 0,
+     AppendTo[out,
+      If[TrueQ[c[\"degenerate\"]], b[[j]],
+       s = FindRoot[figState[pr, c, 10^lu, figA[c, 10^lu]][\"ATOT\"] == at,
+         {lu, Log10[b[[j]][\"u\"]], Log10[b[[j + 1]][\"u\"]]}];
+       figState[pr, c, 10^(lu /. s), figA[c, 10^(lu /. s)]]]]],
+    {j, Length[g] - 1}], {b, br}];
+  SortBy[out, #[\"u\"] &]];
+
+(* Fold of the detached branch (minimum of ATOT(u) on the branch that does not reach u = r). *)
+figDetachedFold[pr_Association] := Module[{c = figConst[pr], br, det, i0, lu, sol},
+  If[TrueQ[c[\"degenerate\"]], Return[Missing[\"NoDetachedBranch\"]]];
+  br = figBranches[pr];
+  det = Select[br, Min[Abs[Log10[#[\"u\"]/c[\"r\"]]] & /@ #] > 10^-3 &];
+  If[det === {}, Return[Missing[\"NoDetachedBranch\"]]];
+  det = First[det];
+  i0 = First[Ordering[#[\"ATOT\"] & /@ det, 1]];
+  (* derivative-free search started from two points (no line search, no lstol message) *)
+  sol = Quiet[FindMinimum[figState[pr, c, 10^lu, figA[c, 10^lu]][\"ATOT\"],
+     {lu, Log10[det[[i0]][\"u\"]] - 0.01, Log10[det[[i0]][\"u\"]] + 0.01}], {FindMinimum::lstol}];
+  figState[pr, c, 10^(lu /. sol[[2]]), figA[c, 10^(lu /. sol[[2]])]]];
+
+(* Second derivatives and dF/dATOT in augmented coordinates (x1..x6, ATOT), and the
+   right/left null vectors q, p of a singular Jacobian (|q| = 1, p.q = 1). *)
+figHess[pr_Association, at_, xs_List] := Module[{z = Array[figZ, 7], f},
+  f = figRHS[pr, z[[7]], z[[1 ;; 6]]];
+  D[f, {z, 2}] /. Thread[z -> Append[xs, at]]];
+figFA[pr_Association, at_, xs_List] := Module[{z7}, D[figRHS[pr, z7, xs], z7] /. z7 -> at];
+figNull[jm_] := Module[{uu, ww, vv, q, p},
+  {uu, ww, vv} = SingularValueDecomposition[N[jm]];
+  q = vv[[All, -1]]; p = uu[[All, -1]]; q = q/Norm[q]; p = p/(p . q);
+  {q, p, ww[[-1, -1]]/ww[[1, 1]]}];
+
+(* Branch point: exact branches near the branch point in linear axes, with the two
+   tangent directions given by the branching equation a xi^2 + 2 b xi eta + c eta^2 = 0. *)
+figBPPlot[pr_Association, title_] := Module[{bp, xs, at, app, jm, q, p, fa, mm, sol, v0, h, qb, vb,
+   a, b, cc, dirs, lines, br, lab, st, un, tmax},
+  bp = figBP[pr]; If[MissingQ[bp], Return[Missing[\"NoBranchPoint\"]]];
+  xs = bp[\"x\"]; at = bp[\"ATOT\"]; app = xs[[2]];
+  jm = figJac[pr, at, xs]; {q, p} = Most[figNull[jm]]; fa = figFA[pr, at, xs];
+  mm = ArrayFlatten[{{jm, Transpose[{p}]}, {{q}, 0}}];
+  sol = LinearSolve[mm, Append[-fa, 0]]; v0 = Most[sol];
+  h = figHess[pr, at, xs]; qb = Append[q, 0]; vb = Append[v0, 1];
+  a = p . (qb . # . qb & /@ h); b = p . (qb . # . vb & /@ h); cc = p . (vb . # . vb & /@ h);
+  dirs = If[Abs[a] < 10^-4 Max[Abs[{b, cc}]],
+    {{1, 0}, {-cc/(2 b), 1}},
+    {{(-b + Sqrt[b^2 - a cc])/a, 1}, {(-b - Sqrt[b^2 - a cc])/a, 1}}];
+  lines = Function[d, With[{w = d[[1]] qb + d[[2]] vb}, {w[[7]], w[[2]]}]] /@ dirs;
+  br = figBranches[pr];
+  lab = Flatten[Function[bb, {#[\"ATOT\"], #[\"x\"][[2]], figStableQ[pr, #[\"ATOT\"], #[\"x\"]]} & /@ bb] /@ br, 1];
+  lab = Select[lab, 0.4 at < #[[1]] < 1.6 at && #[[2]] < 3 app &];
+  st = Cases[lab, {x_, y_, True} :> {x, y}]; un = Cases[lab, {x_, y_, False} :> {x, y}];
+  Show[ListPlot[Select[{st, un}, Length[#] > 0 &],
+    PlotStyle -> {Directive[figBlue, PointSize[0.006]], Directive[figRed, PointSize[0.006]]}],
+   Graphics[{Black, Dashed, Thickness[0.004],
+     Function[l, tmax = Min[If[Abs[l[[1]]] > 0, 0.5 at/Abs[l[[1]]], Infinity],
+         If[Abs[l[[2]]] > 0, 1.2 app/Abs[l[[2]]], Infinity]];
+       Line[{{at, app} - tmax l, {at, app} + tmax l}]] /@ lines,
+     PointSize[0.025], Point[{at, app}]}],
+   PlotRange -> {{0.4 at, 1.6 at}, {0, 3 app}}, Frame -> True,
+   FrameLabel -> {\"A_TOT (nM)\", \"APP (nM)\"}, ImageSize -> 440,
+   PlotLabel -> Style[Column[{title, Row[{\"a = \", ScientificForm[a, 3], \",  b = \", ScientificForm[b, 3],
+        \",  c = \", ScientificForm[cc, 3]}], Row[{\"discriminant b^2 - a c = \", ScientificForm[b^2 - a cc, 3],
+        \"  (dashed: tangents)\"}]}, Alignment -> Center], 10]]];", "Input", CellTags -> "AddedPlotCell"],
+Cell["Added figure. Plot: the reaction network drawn from the complexes and the 12 directed reactions of Section 1 (two linkage classes, kinase above and phosphatase below). Saved as S1_reaction_network.pdf.", "Text", CellTags -> "AddedPlotCell"],
+Cell["(* Plot for Section 1: reaction network (10 complexes, 12 reaction directions, 2 linkage classes) *)
+figComplexNames = {\"A+K\", \"AK\", \"AP+K\", \"APK\", \"APP+K\", \"APP+P\", \"APPC\", \"AP+P\", \"APC\", \"A+P\"};
+figEdges = {{1, 2}, {2, 1}, {2, 3}, {3, 4}, {4, 3}, {4, 5}, {6, 7}, {7, 6}, {7, 8}, {8, 9}, {9, 8}, {9, 10}};
+figEdgeLabels = {\"k1\", \"k11\", \"k2\", \"k3\", \"k33\", \"k4\", \"k5\", \"k55\", \"k6\", \"k7\", \"k77\", \"k8\"};
+figNetwork = Graph[Range[10],
+   MapThread[Labeled[DirectedEdge @@ #1, #2] &, {figEdges, figEdgeLabels}],
+   VertexCoordinates -> Join[Table[{2 i, 1}, {i, 0, 4}], Table[{8 - 2 i, 0}, {i, 0, 4}]],
+   VertexLabels -> Thread[Range[10] -> (Placed[Style[#, 9, Bold], Center] & /@ figComplexNames)],
+   VertexShapeFunction -> \"RoundedRectangle\", VertexSize -> {\"Scaled\", 0.11},
+   VertexStyle -> Directive[White, EdgeForm[Gray]], EdgeStyle -> Gray,
+   EdgeLabelStyle -> Directive[9, figBlue], ImageSize -> 460,
+   PlotLabel -> Style[\"Kinase linkage class (top), phosphatase linkage class (bottom)\", 10]];
+figShow[\"S1_reaction_network\", {figNetwork}, figNetwork]", "Input", CellTags -> "AddedPlotCell"],
+Cell[
 
 "\<2. Verify conservation laws and deficiency\>","Section",ExpressionUUID -> "422ad072-dbb0-46ef-be72-090902464a5a"],Cell[
 
@@ -137,7 +335,39 @@ BoxData[{RowBox[
 {"\"Stoichiometric rank: \"",","," ","stoichiometricRank",",","\n","  ","\"; independent conservation laws: \"",","," ","conservationDimension"}],"]"}],";"}],"\n",RowBox[
 {RowBox[{"Print","[",RowBox[{"\"Conservation identities (each should be a zero vector): \"",",","\n","  ","conservationChecks"}],"]"}],";"}],"\n",RowBox[
 {RowBox[{"Print","[",RowBox[{"\"Deficiency c - l - rank(N): \"",","," ","complexCount",","," ","\" - \"",",","\n","  ","linkageClassCount",","," ","\" - \"",","," ","stoichiometricRank",","," ","\" = \"",","," ","networkDeficiency"}],"]"}],";"}]}],
-"Input",ExpressionUUID -> "10892fa4-d38f-4c0c-85b6-8eacc726c859"],Cell[
+"Input",ExpressionUUID -> "10892fa4-d38f-4c0c-85b6-8eacc726c859"],
+Cell["Added figure. Plots: (left) the stoichiometric matrix N; (middle) a simulation of the full nine-species mass-action model for the Fig 3 parameter set at A_TOT = 23.21 nM; (right) the three conserved totals during that simulation, which stay at their initial values to round-off. Saved as S2_stoichiometry_and_conservation.pdf.", "Text", CellTags -> "AddedPlotCell"],
+Cell["(* Plot for Section 2: stoichiometric matrix and conservation of A_TOT, K_TOT, P_TOT in the full model *)
+figSpecies = {\"A\", \"AP\", \"APP\", \"K\", \"P\", \"AK\", \"APK\", \"APPC\", \"APC\"};
+figComplexVectors = {{1, 0, 0, 1, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 1, 0, 0, 0}, {0, 1, 0, 1, 0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0, 0, 1, 0, 0}, {0, 0, 1, 1, 0, 0, 0, 0, 0}, {0, 0, 1, 0, 1, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0, 0, 0, 1, 0}, {0, 1, 0, 0, 1, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 1},
+   {1, 0, 0, 0, 1, 0, 0, 0, 0}};
+figEdges = {{1, 2}, {2, 1}, {2, 3}, {3, 4}, {4, 3}, {4, 5}, {6, 7}, {7, 6}, {7, 8}, {8, 9}, {9, 8}, {9, 10}};
+figEdgeLabels = {\"k1\", \"k11\", \"k2\", \"k3\", \"k33\", \"k4\", \"k5\", \"k55\", \"k6\", \"k7\", \"k77\", \"k8\"};
+figN = Transpose[(figComplexVectors[[#[[2]]]] - figComplexVectors[[#[[1]]]]) & /@ figEdges];
+(* mass-action rate of each directed reaction: rate constant times its reactant concentrations *)
+figFullRHS[pr_Association, cs_List] := figN . MapThread[
+    pr[#2] (Times @@ Pick[cs, figComplexVectors[[#1[[1]]]], 1]) &, {figEdges, figEdgeLabels}];
+figNPlot = MatrixPlot[figN,
+   ColorFunction -> (Blend[{figRed, White, figBlue}, (# + 1)/2] &), ColorFunctionScaling -> False,
+   FrameTicks -> {{Transpose[{Range[9], figSpecies}], None}, {Transpose[{Range[12], figEdgeLabels}], None}},
+   PlotLabel -> \"Stoichiometric matrix N (red -1, blue +1)\", ImageSize -> 440];
+Module[{pr = figSet3, at = 23.21, vars, c0, sol, tot, g1, g2},
+ vars = Table[figC[i][figT], {i, 9}];
+ c0 = {at, 0, 0, pr[\"KTOT\"], pr[\"PTOT\"], 0, 0, 0, 0};
+ sol = First[NDSolve[Join[Thread[D[vars, figT] == figFullRHS[pr, vars]], Thread[(vars /. figT -> 0) == c0]],
+    vars, {figT, 0, 10^5}, MaxSteps -> Infinity]];
+ tot = {{1, 1, 1, 0, 0, 1, 1, 1, 1}, {0, 0, 0, 1, 0, 1, 1, 0, 0}, {0, 0, 0, 0, 1, 0, 0, 1, 1}};
+ g1 = LogLinearPlot[Evaluate[vars /. sol], {figT, 10^-2, 10^5}, PlotRange -> All, Frame -> True,
+   PlotLegends -> Placed[figSpecies, Below], FrameLabel -> {\"time (s)\", \"concentration (nM)\"},
+   PlotLabel -> \"Full mass-action model (9 species), A_TOT = 23.21 nM\", ImageSize -> 440];
+ g2 = LogLinearPlot[Evaluate[(tot . vars - {at, pr[\"KTOT\"], pr[\"PTOT\"]}) /. sol], {figT, 10^-2, 10^5},
+   PlotRange -> All, Frame -> True, PlotLegends -> Placed[{\"A_TOT drift\", \"K_TOT drift\", \"P_TOT drift\"}, Below],
+   FrameLabel -> {\"time (s)\", \"total minus its initial value (nM)\"},
+   PlotLabel -> \"The three conserved totals stay constant\", ImageSize -> 440];
+ figShow[\"S2_stoichiometry_and_conservation\", {figNPlot, g1, g2}, GraphicsRow[{figNPlot, g1, g2}, ImageSize -> 1300]]]", "Input", CellTags -> "AddedPlotCell"],
+Cell[
 CellGroupData[
 {Cell[
 "\<3. Build the reduced mass-action model and Jacobian\>","Section",ExpressionUUID -> "5eca1eda-21fa-4c65-af56-c0ef10589820"],Cell[
@@ -257,7 +487,40 @@ RowBox[{"{",RowBox[{RowBox[{"{",RowBox[{RowBox[{RowBox[{RowBox[{"-","k3"}]," ",R
 {"{",RowBox[{RowBox[{"k7"," ",RowBox[{"(",RowBox[{"PTOT","-","x5","-","x6"}],")"}]}],",","0",",","0",",","0",",",RowBox[
 {RowBox[{"-","k7"}]," ","x1"}],",",RowBox[{RowBox[{"-","k77"}],"-","k8","-",RowBox[
 {"k7"," ","x1"}]}]}],"}"}]}],"}"}],StandardForm],"Output",CellLabel -> "Out[52]= ",
-ExpressionUUID -> "a999f92a-9ac8-464e-8cd8-7a80c83b0f5a"]},Open],ExpressionUUID -> "ff75abc8-34ca-42ef-860f-4fdeaf7dd258"],Cell[
+ExpressionUUID -> "a999f92a-9ac8-464e-8cd8-7a80c83b0f5a"]},Open],ExpressionUUID -> "ff75abc8-34ca-42ef-860f-4fdeaf7dd258"],
+Cell["Added figure. Plots for the Fig 3 parameter set: (left) APP(t) of the reduced six-state model at A_TOT = 23.21 nM from an unphosphorylated start (X0 = 0) and from a doubly phosphorylated start (APP = A_TOT): the two runs end in different stable steady states; (middle) minus the real parts of the eigenvalues of the analytic Jacobian at the two end states (all positive, so both states are stable); (right) a quasi-static dose sweep: A_TOT increased step by step from X0 = 0, and decreased step by step from APP = A_TOT, each step integrated to steady state. The increasing sweep stays on the main branch; the decreasing sweep stays on the detached branch until its fold (A_TOT = 19.49 nM) and then drops. Saved as S3_time_courses_eigenvalues_dose_sweep.pdf.", "Text", CellTags -> "AddedPlotCell"],
+Cell["(* Plot for Section 3: dynamics of the reduced model, Jacobian eigenvalues, dose-up and dose-down sweep *)
+Module[{pr = figSet3, at = 23.21, vars, run, xEnd, s0, s1, e0, e1, g1, g2, g3, grid, xu, xd, prev,
+   upList = {}, downList = {}, fold},
+ vars = Table[figY[i][figT], {i, 6}];
+ run[x0_List, at1_, tmax_] := First[NDSolve[Join[Thread[D[vars, figT] == figRHS[pr, at1, vars]],
+      Thread[(vars /. figT -> 0) == x0]], vars, {figT, 0, tmax}, MaxSteps -> Infinity]];
+ xEnd[s_, tmax_] := (vars /. s) /. figT -> tmax;
+ s0 = run[ConstantArray[0., 6], at, 10^6]; s1 = run[{0., at, 0., 0., 0., 0.}, at, 10^6];
+ g1 = LogLogPlot[Evaluate[{vars[[2]] /. s0, vars[[2]] /. s1}], {figT, 1, 10^6}, PlotRange -> All,
+   Frame -> True, PlotStyle -> {figBlue, figRed},
+   PlotLegends -> Placed[{\"start unphosphorylated (X0 = 0)\", \"start doubly phosphorylated (APP = A_TOT)\"}, Below],
+   FrameLabel -> {\"time (s)\", \"APP (nM)\"}, PlotLabel -> \"Two stable steady states at A_TOT = 23.21 nM\", ImageSize -> 440];
+ e0 = Eigenvalues[figJac[pr, at, xEnd[s0, 10^6]]]; e1 = Eigenvalues[figJac[pr, at, xEnd[s1, 10^6]]];
+ g2 = ListLogPlot[{-Re[e0], -Re[e1]}, PlotMarkers -> {Automatic, 10}, PlotStyle -> {figBlue, figRed},
+   Frame -> True, FrameLabel -> {\"eigenvalue index\", \"-Re(eigenvalue) (1/s)\"},
+   PlotLegends -> Placed[{\"low state (from X0 = 0)\", \"high state (from APP = A_TOT)\"}, Below],
+   PlotLabel -> \"Analytic Jacobian: all eigenvalues in the left half-plane\", ImageSize -> 440];
+ grid = Range[0.5, 60., 1.];
+ xu = ConstantArray[0., 6];
+ Do[xu = xEnd[run[xu, a, 2 10^5], 2 10^5]; AppendTo[upList, {a, xu[[2]]}], {a, grid}];
+ xd = {0., Last[grid], 0., 0., 0., 0.}; prev = Last[grid];
+ Do[xd = xd a/prev; prev = a; xd = xEnd[run[xd, a, 2 10^5], 2 10^5]; AppendTo[downList, {a, xd[[2]]}],
+  {a, Reverse[grid]}];
+ fold = figDetachedFold[pr][\"ATOT\"];
+ g3 = ListLogPlot[{upList, downList}, Joined -> True, PlotMarkers -> {Automatic, 7},
+   PlotStyle -> {figBlue, figRed}, Frame -> True, GridLines -> {{fold}, None},
+   PlotLegends -> Placed[{\"increasing A_TOT, start X0 = 0\", \"decreasing A_TOT, start APP = A_TOT\"}, Below],
+   FrameLabel -> {\"A_TOT (nM)\", \"APP at steady state (nM)\"},
+   PlotLabel -> Column[{\"Quasi-static dose sweeps\", \"grid line: detached fold, A_TOT = \" <> figNum[fold] <> \" nM\"}, Alignment -> Center],
+   ImageSize -> 440];
+ figShow[\"S3_time_courses_eigenvalues_dose_sweep\", {g1, g2, g3}, GraphicsRow[{g1, g2, g3}, ImageSize -> 1300]]]", "Input", CellTags -> "AddedPlotCell"],
+Cell[
 CellGroupData[
 {Cell[
 TextData[{"4",StyleBox[RowBox[{"."," "}]],"Check"," ","the"," ","compact"," ","Jacobian"," ","formula"}],
@@ -395,7 +658,26 @@ BoxData[
 InterpretationBox[RowBox[{"\"All third state derivatives vanish: \"","\[InvisibleSpace]","True"}],
 SequenceForm["All third state derivatives vanish: ",True],Editable -> False],StandardForm],
 "Print",ExpressionUUID -> "bad77544-4f8e-4166-ae25-f8d1afdff257"]},Open],ExpressionUUID -> "25b8100f-bd8b-4f58-a5bd-15d1740be64e"]},
-Open],ExpressionUUID -> "fb7a6554-137c-46fc-8290-141f128415d7"],Cell[
+Open],ExpressionUUID -> "fb7a6554-137c-46fc-8290-141f128415d7"],
+Cell["Added figure. Plots at the three steady states a, b, c of the Fig 3 set at A_TOT = 23.21 nM: (left) sign pattern of the compact analytic Jacobian at state c; (middle) log10 of the entry-wise difference between the compact Jacobian and a central finite-difference Jacobian of the reduced model (round-off level); (right) the largest real part of the eigenvalues at a, b and c (b is the unstable middle state). Saved as S4_compact_Jacobian_checks.pdf.", "Text", CellTags -> "AddedPlotCell"],
+Cell["(* Plot for Section 4: compact Jacobian against finite differences, and stability of the three states *)
+Module[{pr = figSet3, at = 23.21, sts, xs, jm, jfd, hh = 10^-7, g1, g2, g3, mx},
+ sts = figStatesAt[pr, at]; xs = sts[[-1]][\"x\"];
+ jm = figJac[pr, at, xs];
+ jfd = Transpose[Table[(figRHS[pr, at, xs + hh UnitVector[6, j]] - figRHS[pr, at, xs - hh UnitVector[6, j]])/(2 hh), {j, 6}]];
+ g1 = MatrixPlot[Sign[jm], ColorFunction -> (Blend[{figRed, White, figBlue}, (# + 1)/2] &), ColorFunctionScaling -> False,
+   FrameTicks -> {{Transpose[{Range[6], {\"AP\", \"APP\", \"AK\", \"APK\", \"APPC\", \"APC\"}}], None},
+     {Transpose[{Range[6], {\"AP\", \"APP\", \"AK\", \"APK\", \"APPC\", \"APC\"}}], None}},
+   PlotLabel -> \"Sign of the Jacobian at state c (red -, blue +)\", ImageSize -> 440];
+ g2 = MatrixPlot[Log10[Abs[jm - jfd] + 10^-16], PlotLegends -> Automatic,
+   PlotLabel -> \"log10 |compact Jacobian - finite differences|\", ImageSize -> 440];
+ mx = Max[Re[Eigenvalues[figJac[pr, at, #[\"x\"]]]]] & /@ sts;
+ g3 = BarChart[Sign[mx] Log10[1 + Abs[mx]/10^-8], ChartLabels -> (Column[{#1, \"u = \" <> figNum[#2[\"u\"]]}, Alignment -> Center] & @@@ Transpose[{{\"a\", \"b\", \"c\"}[[;; Length[sts]]], sts}]),
+   ChartStyle -> (If[# < 0, figBlue, figRed] & /@ mx), Frame -> True,
+   FrameLabel -> {None, \"sign(max Re) log10(1 + |max Re| / 1e-8)\"},
+   PlotLabel -> Column[{\"Largest real part of the eigenvalues\", \"at a, b, c (red: unstable)\"}, Alignment -> Center], ImageSize -> 440];
+ figShow[\"S4_compact_Jacobian_checks\", {g1, g2, g3}, GraphicsRow[{g1, g2, g3}, ImageSize -> 1300]]]", "Input", CellTags -> "AddedPlotCell"],
+Cell[
 CellGroupData[
 {Cell[
 "\<5. Derive the exact positive steady-state parametrisation\>","Section",
@@ -450,7 +732,30 @@ BoxData[
 FractionBox[RowBox[{"k3"," ","k4"," ",RowBox[{"(",RowBox[{"k55","+","k6"}],")"}]}],
 RowBox[{RowBox[{"(",RowBox[{"k33","+","k4"}],")"}]," ","k5"," ","k6"}]],StandardForm],
 "Output",CellLabel -> "Out[75]= ",ExpressionUUID -> "3b5d78b5-381c-4d93-b047-44fd1ce1e31e"]},
-Open],ExpressionUUID -> "729cc1b7-5882-43b0-b1ba-9902fd04fadf"],Cell[
+Open],ExpressionUUID -> "729cc1b7-5882-43b0-b1ba-9902fd04fadf"],
+Cell["Added figure. Plots for the Fig 3 parameter set: (left) free substrate A(u) on its two positive intervals, with the band r < u < u* where A < 0 (grey); (middle) A_TOT(u): its level set at A_TOT = 23.21 nM gives the three steady states (open circles), its minimum on the detached interval is the fold (black); (right) the complete bifurcation diagram APP against A_TOT obtained by placing every grid point at its A_TOT (blue stable, red unstable). Saved as S5_parametrisation_A_ATOT_diagram.pdf.", "Text", CellTags -> "AddedPlotCell"],
+Cell["(* Plot for Section 5: A(u), ATOT(u) and the complete bifurcation diagram *)
+Module[{pr = figSet3, c = figConst[figSet3], br, band, g1, g2, g3, roots, fold, curves},
+ br = figBranches[pr];
+ band = {GrayLevel[0.85], Rectangle[{Log[c[\"r\"]], -100}, {Log[c[\"ustar\"]], 100}]};
+ curves = Function[b, {#[\"u\"], #[\"A\"]} & /@ b] /@ br;
+ g1 = ListLogLogPlot[curves, Joined -> True, PlotStyle -> Black, Prolog -> band, Frame -> True,
+   PlotRange -> {{10^-1, 10^6}, All}, FrameLabel -> {\"u = K/P\", \"free substrate A(u) (nM)\"},
+   PlotLabel -> Column[{\"A(u) = (u - r)/(u (alpha u + beta))\", \"r = \" <> figNum[c[\"r\"]] <> \",  u* = \" <> figNum[c[\"ustar\"]] <> \"  (grey: A < 0)\"}, Alignment -> Center],
+   ImageSize -> 440];
+ roots = {#[\"u\"], #[\"ATOT\"]} & /@ figStatesAt[pr, 23.21];
+ fold = With[{f = figDetachedFold[pr]}, {{f[\"u\"], f[\"ATOT\"]}}];
+ curves = Function[b, {#[\"u\"], #[\"ATOT\"]} & /@ b] /@ br;
+ g2 = ListLogLogPlot[Join[curves, {roots, fold}], Joined -> Join[ConstantArray[True, Length[curves]], {False, False}],
+   PlotStyle -> Join[ConstantArray[Black, Length[curves]], {Directive[figRed, PointSize[0.02]], Directive[Black, PointSize[0.025]]}],
+   Prolog -> band, Frame -> True, PlotRange -> {{10^-1, 10^6}, {1, 10^4}},
+   GridLines -> {None, {23.21}}, FrameLabel -> {\"u = K/P\", \"A_TOT(u) (nM)\"},
+   PlotLabel -> Column[{\"Steady states at A_TOT = 23.21 nM: u = \" <> StringRiffle[figNum /@ roots[[All, 1]], \", \"],
+      \"fold (black): A_TOT = \" <> figNum[fold[[1, 2]]] <> \" nM\"}, Alignment -> Center], ImageSize -> 440];
+ g3 = figDiagram[pr, PlotRange -> {{10^-1, 10^3}, {10^-6, 10^3}},
+   PlotLabel -> \"Complete diagram (blue stable, red unstable, black folds)\", ImageSize -> 440];
+ figShow[\"S5_parametrisation_A_ATOT_diagram\", {g1, g2, g3}, GraphicsRow[{g1, g2, g3}, ImageSize -> 1300]]]", "Input", CellTags -> "AddedPlotCell"],
+Cell[
 "\<6. Check the flux-balance and total-balance identities\>",
 "Section",ExpressionUUID -> "caff1784-5687-4ee1-803c-f1c30a51a2af"],Cell[
 "\<Substitution into the two site-flux balances should give zero residuals. The total-enzyme ratio equation should also reproduce A(u); these symbolic checks expose algebra errors before numerical use.\>",
@@ -1035,7 +1340,23 @@ Editable -> True],StandardForm],"Print",ExpressionUUID -> "87576f55-cd04-4785-af
 BoxData[
 "\"Positive steady states use u>0 with A(u)>0 and positive reconstructed concentrations.\"",
 StandardForm],"Print",ExpressionUUID -> "728ecc48-c892-45e6-b50d-7aa98cdf6c51"]},
-Open],ExpressionUUID -> "850fe5fd-e4a3-4295-a8f9-e150c9fb07e4"],Cell[
+Open],ExpressionUUID -> "850fe5fd-e4a3-4295-a8f9-e150c9fb07e4"],
+Cell["Added figure. Plot: along every branch of the Fig 3 set, the relative residuals of the two site-flux balances (v2 = v8, v4 = v6), of the phosphatase total, and of all six steady-state equations F(x) = 0, evaluated numerically for the reconstructed states. All lie at round-off level, so every grid point of the parametrisation is an exact steady state. Saved as S6_parametrisation_residuals.pdf.", "Text", CellTags -> "AddedPlotCell"],
+Cell["(* Plot for Section 6: numerical residuals of the identities along the parametrised branches *)
+Module[{pr = figSet3, pts, res, fl = 10^-18},
+ pts = Flatten[figBranches[pr], 1];
+ res = Function[s, With[{xx = s[\"x\"], pp = s[\"P\"]},
+      {s[\"u\"],
+       Max[fl, Abs[pr[\"k2\"] xx[[3]] - pr[\"k8\"] xx[[6]]]/(pr[\"k2\"] xx[[3]])],
+       Max[fl, Abs[pr[\"k4\"] xx[[4]] - pr[\"k6\"] xx[[5]]]/(pr[\"k4\"] xx[[4]])],
+       Max[fl, Abs[pp + xx[[5]] + xx[[6]] - pr[\"PTOT\"]]/pr[\"PTOT\"]],
+       Max[fl, Max[Abs[figRHS[pr, s[\"ATOT\"], xx]]]/Max[pr[\"k1\"] s[\"ATOT\"] pr[\"KTOT\"], Max[Abs[xx]]]]}]] /@ pts;
+ With[{g = ListLogLogPlot[{res[[All, {1, 2}]], res[[All, {1, 3}]], res[[All, {1, 4}]], res[[All, {1, 5}]]},
+   PlotRange -> {All, {10^-18, 10^-6}}, Frame -> True, FrameLabel -> {\"u = K/P\", \"relative residual\"},
+   PlotLegends -> Placed[{\"site 1 flux, v2 = v8\", \"site 2 flux, v4 = v6\", \"phosphatase total\", \"all six equations F(x) = 0\"}, Below],
+   PlotLabel -> Column[{\"The parametrised states satisfy every\", \"steady-state identity to round-off\"}, Alignment -> Center], ImageSize -> 440]},
+  figShow[\"S6_parametrisation_residuals\", {g}, g]]]", "Input", CellTags -> "AddedPlotCell"],
+Cell[
 CellGroupData[
 {Cell[
 "\<7. Derive fold, detached-branch, and branch-point conditions\>","Section",
@@ -1213,7 +1534,27 @@ BoxData[
 ExpressionUUID -> "ee5bc7f7-7420-4101-910b-e845dfc2e25c"],Cell[
 BoxData["\"Branch-point condition under symmetry: k4 > k2.\"",
 StandardForm],"Print",ExpressionUUID -> "0e8f1098-0c6a-4251-94a8-34c598f3adf7"]},
-Open],ExpressionUUID -> "d67284eb-ddd9-467f-a715-5d59ce4ce51b"],Cell[
+Open],ExpressionUUID -> "d67284eb-ddd9-467f-a715-5d59ce4ce51b"],
+Cell["Added figure. Plots: (top) the Fig 3 set with k8 changed so that x = log10(k8 P_TOT/(k2 K_TOT)) = -0.5, 0.3 and its original value 1.28, at fixed y = log10(k4 K_TOT/(k6 P_TOT)) = 3.46; with x < 0 criterion (10) fails and there is no detached branch (Class 1), with x > 0 a detached branch appears (Classes 2 and 5); the last panel shows the three sets in the (x, y) plane. (Bottom) the symmetric Class 6 set with k4 > k2 (branch point at u = 1, A = 1/alpha) and the same set with k4 = k8 = k2/2 (alpha < 0: no branch point). Saved as S7_detached_branch_and_branch_point_conditions.pdf.", "Text", CellTags -> "AddedPlotCell"],
+Cell["(* Plot for Section 7: criterion (10) for the detached branch and the branch-point condition k4 > k2 *)
+Module[{pr = figSet3, x0, y0, xt, sets, diags, plane, symNo, d6, d6no},
+ {x0, y0} = {Log10[pr[\"k8\"] pr[\"PTOT\"]/(pr[\"k2\"] pr[\"KTOT\"])], Log10[pr[\"k4\"] pr[\"KTOT\"]/(pr[\"k6\"] pr[\"PTOT\"])]};
+ xt = {-0.5, 0.3, x0};
+ sets = Function[xv, Module[{q = pr}, q[\"k8\"] = pr[\"k8\"] 10^(xv - x0); q]] /@ xt;
+ diags = MapThread[figDiagram[#1, PlotLabel -> (\"x = \" <> figNum[#2, 3] <> \",  y = \" <> figNum[y0, 3] <>
+        If[#2 > 0 && y0 > 0, \":  detached branch\", \":  no detached branch\"]), ImageSize -> 440] &, {sets, xt}];
+ plane = Graphics[{RGBColor[1, 0.85, 0.85], Rectangle[{0, 0}, {5, 5}], Black, Line[{{-5, 0}, {5, 0}}],
+    Line[{{0, -5}, {0, 5}}], figRed, PointSize[0.03], Point[{#, y0} & /@ xt],
+    Black, Text[\"criterion (10) holds\", {2.5, 4.5}]},
+   Frame -> True, PlotRange -> {{-5, 5}, {-5, 5}}, AspectRatio -> 1,
+   FrameLabel -> {\"x = log10(k8 P_TOT / k2 K_TOT)\", \"y = log10(k4 K_TOT / k6 P_TOT)\"},
+   PlotLabel -> \"The three sets in the plane of criterion (10)\", ImageSize -> 440];
+ symNo = Module[{q = figSet6}, q[\"k4\"] = figSet6[\"k2\"]/2; q[\"k8\"] = figSet6[\"k2\"]/2; q];
+ d6 = figDiagram[figSet6, PlotLabel -> \"Symmetric set, k4 > k2: branch point (black)\", ImageSize -> 440];
+ d6no = figDiagram[symNo, PlotLabel -> \"Same set with k4 = k8 = k2/2: no branch point\", ImageSize -> 440];
+ figShow[\"S7_detached_branch_and_branch_point_conditions\", Join[diags, {plane, d6, d6no}],
+  Column[{GraphicsRow[Append[diags, plane], ImageSize -> 1300], GraphicsRow[{d6, d6no}, ImageSize -> 700]}, Center]]]", "Input", CellTags -> "AddedPlotCell"],
+Cell[
 CellGroupData[
 {Cell[
 "\<8. Derive the crossing-branch slope for Classes 7 and 8\>","Section",ExpressionUUID -> "b9859d40-d95c-4d06-980b-2200b533d873"],Cell[
@@ -1367,7 +1708,27 @@ StandardForm],"Print",ExpressionUUID -> "c3d1119f-f547-433c-aa7e-acb1bb989f46"],
 BoxData[
 "\"Class 7 condition: M5 < M1; Class 8 condition: M5 > M1; pitchfork limit: M5 = M1.\"",
 StandardForm],"Print",ExpressionUUID -> "223cc1f5-43f1-4d5e-8b39-0623ae9e9222"]},
-Open],ExpressionUUID -> "a0d6b693-6ad3-49fa-883b-c2c6119357d7"],Cell[
+Open],ExpressionUUID -> "a0d6b693-6ad3-49fa-883b-c2c6119357d7"],
+Cell["Added figure. Plots: the symmetric Class 6 set with k5 scaled so that M5/M1 = 1/2, 1 and 2 (first-binding asymmetry). (Top) the diagram near the branch point: a pitchfork for M5 = M1 and transcritical crossings of opposite orientation for M5 < M1 (Class 7) and M5 > M1 (Class 8). (Bottom) the slope s of Eq. (13) as a function of log10(M5/M1) for this set (line), with the slope d ln A_TOT / d ln u at u = 1 computed numerically from the parametrisation (points). Saved as S8_crossing_branch_slope.pdf.", "Text", CellTags -> "AddedPlotCell"],
+Cell["(* Plot for Section 8: orientation of the crossing branch, slope s of Eq. (13) *)
+Module[{base = figSet6, f = {2., 1., 0.5}, sets, zooms, c0, sEq13, sNum, g},
+ sets = Function[fv, Module[{q = base}, q[\"k5\"] = base[\"k5\"] fv; q]] /@ f;
+ zooms = MapThread[figDiagram[#1, PlotRange -> {{0.3, 3} #2[\"ATOT\"], {0.03, 30} #2[\"x\"][[2]]},
+       PlotLabel -> (\"M5/M1 = \" <> figNum[figConst[#1][\"M5\"]/figConst[#1][\"M1\"], 3] <>
+          \",  branch point at A_TOT = \" <> figNum[#2[\"ATOT\"]] <> \" nM\"), ImageSize -> 440] &, {sets, figBP /@ sets}];
+ c0 = figConst[base];
+ sEq13[lr_] := With[{m1 = c0[\"M1\"], m5 = 10^lr c0[\"M1\"], m3 = c0[\"M3\"], k2 = base[\"k2\"], k4 = base[\"k4\"], kt = base[\"KTOT\"]},
+   k4^2 (m5 - m1)/(kt (k4^2 - k2^2) + k4^2 (m1 + m5) + k2 k4 m3)];
+ sNum[q_Association] := With[{c = figConst[q], hh = 10^-5},
+   (Log[figState[q, c, 1 + hh, 1/(c[\"alpha\"] (1 + hh))][\"ATOT\"]] -
+     Log[figState[q, c, 1 - hh, 1/(c[\"alpha\"] (1 - hh))][\"ATOT\"]])/(2 hh)];
+ g = Show[Plot[sEq13[lr], {lr, -2, 2}, PlotStyle -> Black],
+   ListPlot[{Log10[figConst[#][\"M5\"]/figConst[#][\"M1\"]], sNum[#]} & /@ sets, PlotStyle -> Directive[figRed, PointSize[0.03]]],
+   Frame -> True, GridLines -> {{0}, {0}}, FrameLabel -> {\"log10(M5/M1)\", \"slope s = d ln A_TOT / d ln u at u = 1\"},
+   PlotLabel -> Column[{\"Eq. (13) (line) and numerical slope (points)\", \"s < 0: Class 7;  s = 0: pitchfork;  s > 0: Class 8\"}, Alignment -> Center],
+   ImageSize -> 440];
+ figShow[\"S8_crossing_branch_slope\", Append[zooms, g], Column[{GraphicsRow[zooms, ImageSize -> 1100], g}, Center]]]", "Input", CellTags -> "AddedPlotCell"],
+Cell[
 CellGroupData[
 {Cell[
 "\<9. Define fold and branch-point normal-form coefficients\>","Section",ExpressionUUID -> "794bf4e7-ea6d-41ff-9ffc-d2152ba0b56d"],Cell[
@@ -2077,6 +2438,24 @@ v[6]]]]]]]],Editable -> False],StandardForm],"Print",ExpressionUUID -> "c498ed27
 BoxData[
 InterpretationBox[RowBox[{"\"All third state derivatives vanish: \"","\[InvisibleSpace]","True"}],
 SequenceForm["All third state derivatives vanish: ",True],Editable -> False],StandardForm],
-"Print",ExpressionUUID -> "09e40692-2ee6-467b-935a-e730f6a65155"]},Open],ExpressionUUID -> "dd2de6a0-df7f-4b8d-905a-df5eebd74002"]},
+"Print",ExpressionUUID -> "09e40692-2ee6-467b-935a-e730f6a65155"]},Open],ExpressionUUID -> "dd2de6a0-df7f-4b8d-905a-df5eebd74002"],
+Cell["Added figure. Plots: the coefficients of Section 9 evaluated numerically. (Left) at the detached fold of the Fig 3 set, A_TOT along the exact branch against xi = q.(x - x*) (points) and the normal form A_TOT* + kappa xi^2 with kappa = -aLP/betaLP (dashed). (Middle, right) at the branch point of the symmetric set (pitchfork, a = 0) and of the same set with M5 = 2 M1 (transcritical, a not 0): exact branches near the branch point and the two tangent directions of the branching equation a xi^2 + 2 b xi eta + c eta^2 = 0 (dashed). Saved as S9_normal_forms.pdf.", "Text", CellTags -> "AddedPlotCell"],
+Cell["(* Plot for Section 9: fold and branch-point normal-form coefficients, evaluated numerically *)
+Module[{pr = figSet3, c = figConst[figSet3], fs, xs, at, jm, q, p, hm, qq, aLP, bLP, kap, pts, gF, gP, gT, trans},
+ fs = figDetachedFold[pr]; xs = fs[\"x\"]; at = fs[\"ATOT\"];
+ jm = figJac[pr, at, xs]; {q, p} = Most[figNull[jm]];
+ hm = figHess[pr, at, xs]; qq = Append[q, 0];
+ aLP = (p . (qq . # . qq & /@ hm))/2; bLP = p . figFA[pr, at, xs]; kap = -aLP/bLP;
+ pts = Table[With[{s = figState[pr, c, fs[\"u\"] 10^dd, figA[c, fs[\"u\"] 10^dd]]}, {q . (s[\"x\"] - xs), s[\"ATOT\"]}], {dd, -0.05, 0.05, 0.0025}];
+ gF = Show[ListPlot[pts, PlotStyle -> Directive[Black, PointSize[0.015]]],
+   Plot[at + kap figXi^2, {figXi, Min[pts[[All, 1]]], Max[pts[[All, 1]]]}, PlotStyle -> Directive[figRed, Dashed, Thick]],
+   Frame -> True, FrameLabel -> {\"xi = q.(x - x*)\", \"A_TOT (nM)\"}, ImageSize -> 440,
+   PlotLabel -> Style[Column[{\"Detached fold of the Fig 3 set\", \"points: exact branch;  dashed: normal form\",
+      Row[{\"aLP = \", ScientificForm[aLP, 3], \",  betaLP = \", ScientificForm[bLP, 3], \",  kappa = \", figNum[kap]}]}, Alignment -> Center], 10]];
+ gP = figBPPlot[figSet6, \"Symmetric set (Class 6): pitchfork, a = 0\"];
+ trans = Module[{qs = figSet6}, qs[\"k5\"] = figSet6[\"k5\"]/2; qs];
+ gT = figBPPlot[trans, \"Same set with M5 = 2 M1: transcritical, a not 0\"];
+ figShow[\"S9_normal_forms\", {gF, gP, gT}, GraphicsRow[{gF, gP, gT}, ImageSize -> 1300]]]", "Input", CellTags -> "AddedPlotCell"]
+},
 StyleDefinitions -> "Default.nb",WindowTitle -> "Analytical derivations \[LongDash] step by step",
 FrontEndVersion -> "15. for Wolfram Cloud 1.77.1 (August 27, 2026)"]
